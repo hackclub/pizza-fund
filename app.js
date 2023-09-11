@@ -56,7 +56,7 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<@${slack}> just got a pizza! 🎉`
+          text: `<@${slack}> just got a pizza grant! 🎉`
         }
       }
     ]
