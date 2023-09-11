@@ -30,12 +30,38 @@ const upload = data =>
     })
   })
 
+const approve = id =>
+  new Promise((resolve, reject) => {
+    airtable.update(
+      id,
+      {
+        Accepted: true
+      },
+      (err, record) => {
+        if (err) return reject(err)
+        return resolve(record.get('Slack ID'))
+      }
+    )
+  })
+
 app.action('accept', async ({ body, action, client, ack, say }) => {
   // Update Airtable and send email
-  airtable.update(action.value, {
-    Accepted: true
+  const slack = await approve(action.value)
+
+  // TODO: Send ticket in appropriate channel
+  await client.chat.postMessage({
+    channel: 'C05RZ6K7RS5',
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `<@${slack}> just got a pizza! 🎉`
+        }
+      }
+    ]
   })
-  console.log(body)
+
   await ack()
   await say({
     text: 'Email sent to Hack Club Bank 👍',
@@ -292,7 +318,6 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
         type: 'modal'
       }
     })
-    logger.info(result)
   } catch (error) {
     logger.error(error)
     // Let user know there was an error
