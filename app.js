@@ -110,7 +110,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <https://hackclub.slack.com/team/U03M1H014CX|Holly>. Sworry :/`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>. Sworry :/`
             }
           }
         ]
@@ -157,6 +157,8 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 Slack: <@${user}>
 Email: ${email}
 Club name/venue: ${club}
+Where they are getting pizza: ${pizzaShop}
+
 Country: ${country}
 Why they started a club: ${why}
 ${pizza ? 'And their lovely pizza: ' + pizza : ":/ They didn't make a pizza."}
