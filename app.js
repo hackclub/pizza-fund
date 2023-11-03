@@ -64,7 +64,7 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
 
   await ack()
   await say({
-    text: 'Email sent to Hack Club Bank 👍',
+    text: 'Approved. Email sent to Hack Club Bank 👍',
     thread_ts: body.message.ts
   })
 })
@@ -78,13 +78,13 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "Hey, it's Orpheus the pizza delivery dino again... Hate to say this but your pizza grant got rejected. If you have any questions, reach out to <https://hackclub.slack.com/team/U03M1H014CX|Holly>. Sworry :/"
+          text: "Hey, it's Orpheus the pizza delivery dino again... Hate to say this but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/ . If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>. Sworry :/"
         }
       }
     ]
   })
   await ack()
-  await say({ text: 'DM sent to user.', thread_ts: body.message.ts })
+  await say({ text: 'Rejected. DM sent to user.', thread_ts: body.message.ts })
 })
 
 app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
