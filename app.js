@@ -284,6 +284,27 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             type: 'input',
             element: {
               type: 'plain_text_input',
+              action_id: 'pizza_shop',
+              placeholder: {
+                type: 'plain_text',
+                text: 'I am going to order from Dominos using Uber Eats'
+              }
+            },
+            label: {
+              type: 'plain_text',
+              text: 'pizza_shop',
+              emoji: true
+            },
+            hint: {
+              type: 'plain_text',
+              text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings. 
+              `}
+            },
+          
+          {
+            type: 'input',
+            element: {
+              type: 'plain_text_input',
               multiline: true,
               action_id: 'why',
               placeholder: {
