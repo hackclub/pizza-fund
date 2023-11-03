@@ -126,7 +126,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       'Country': country,
       'Slack ID': user,
       'Why': why,
-      'pizza-shop': pizzaShop,
+      'pizzaShop': pizzaShop,
       'Pizza': pizza || ''
     })
 
