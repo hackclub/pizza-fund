@@ -99,7 +99,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       let key = Object.keys(obj)[0]
       mapped[key] = obj[key].value
     }
-    let { email, club, country, why, pizza } = mapped
+    let { email, club, country, why, pizza, pizzaShop } = mapped
     // Make sure country is valid
     let valid = validCountry(country)
     if (!valid) {
@@ -126,6 +126,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       'Country': country,
       'Slack ID': user,
       'Why': why,
+      'pizza-shop': pizzaShop,
       'Pizza': pizza || ''
     })
 
@@ -278,7 +279,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             type: 'input',
             element: {
               type: 'plain_text_input',
-              action_id: 'pizza_shop',
+              action_id: 'pizzaShop',
               placeholder: {
                 type: 'plain_text',
                 text: 'I am going to order from Dominos using Uber Eats'
