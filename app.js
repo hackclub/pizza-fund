@@ -292,7 +292,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             },
             label: {
               type: 'plain_text',
-              text: 'pizza_shop',
+              text: 'Where are you going to purchase the group meals for your club meeting from?',
               emoji: true
             },
             hint: {
