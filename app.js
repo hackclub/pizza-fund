@@ -270,14 +270,8 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             },
             label: {
               type: 'plain_text',
-              text: 'Country',
+              text: 'Which country does your club run in?',
               emoji: true
-            },
-            hint: {
-              type: 'plain_text',
-              text: `Which country does your club run in? Due to certain restraints we can't offer grants to the following: ${blacklist.red.join(
-                ', '
-              )}`
             }
           },
           {
