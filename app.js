@@ -22,6 +22,16 @@ const validCountry = country => {
   return true
 }
 
+const alreadyApplied = email => {
+  const records = airtable
+    .select({
+      filterByFormula: `AND({Email} = '${email}', {Accepted} = 'true')`
+    })
+    .all()
+  // if records.length > 0, return true
+  if (records.length > 0) { return true } else { return false }
+}
+
 const upload = data =>
   new Promise((resolve, reject) => {
     airtable.create(data, (err, record) => {
@@ -56,13 +66,21 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<@${slack}> just got a pizza grant! 🎉`
+          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
         }
       }
     ]
   })
 
   await ack()
+
+// react to the initial message with a pizza approval delivery emoji
+  await client.reactions.add({
+    channel: body.channel.id,
+    timestamp: body.message.ts,
+    name: 'pizza-delivered'
+  })
+
   await say({
     text: 'Approved. Email sent to Hack Club Bank 👍',
     thread_ts: body.message.ts
@@ -84,6 +102,14 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
     ]
   })
   await ack()
+
+  // react to the initial message with a bad-pizza emoji
+  await client.reactions.add({
+    channel: body.channel.id,
+    timestamp: body.message.ts,
+    name: 'bad-pizza'
+  })
+
   await say({ text: 'Rejected. DM sent to user.', thread_ts: body.message.ts })
 })
 
@@ -117,7 +143,21 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       })
     }
 
-    // TODO: Check if they've already applied for a pizza grant and decide if they need to be rejected
+    let applied = alreadyApplied(email)
+    if (applied) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>.`
+            }
+          }
+        ]
+      })
+    }
 
     // Submit to Airtable
     const id = await upload({
@@ -204,7 +244,7 @@ That's it! Gotta go deliver these pizzas now.`
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U03M1H014CX|Holly>!`
+            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>!`
           }
         }
       ]
@@ -294,10 +334,10 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             },
             hint: {
               type: 'plain_text',
-              text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings. 
+              text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings.
               `}
             },
-          
+
           {
             type: 'input',
             element: {
@@ -345,7 +385,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U03M1H014CX|Holly>!`
+            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>!`
           }
         }
       ]
