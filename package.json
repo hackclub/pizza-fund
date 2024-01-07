@@ -1,7 +1,7 @@
 {
-  "name": "js",
+  "name": "pizza-fund",
   "version": "1.0.0",
-  "description": "",
+  "description": "Powering the Hack Club Pizza Fund. https://hackclub.com/pizza",
   "main": "index.js",
   "scripts": {
     "format": "prettier --ignore-path ./.prettierignore --write .",
@@ -9,13 +9,13 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@slack/bolt": "^3.13.3",
     "airtable": "^0.12.2",
     "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "prettier": "^3.0.3"
+    "prettier": "^3.1.1"
   }
 }

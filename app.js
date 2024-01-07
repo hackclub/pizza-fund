@@ -11,9 +11,15 @@ const app = new App({
   socketMode: true
 })
 
-const airtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
+const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appInkSeZFfvW42h8'
 )('Submissions')
+
+
+const joinsAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
+  'appaqcJtn33vb59Au'
+)('Join Requests')
+
 
 const validCountry = country => {
   // Make sure country isn't on blacklist
@@ -23,7 +29,7 @@ const validCountry = country => {
 }
 
 const alreadyApplied = email => {
-  const records = airtable
+  const records = pizzaAirtable
     .select({
       filterByFormula: `AND({Email} = '${email}', {Accepted} = 'true')`
     })
@@ -32,9 +38,75 @@ const alreadyApplied = email => {
   if (records.length > 0) { return true } else { return false }
 }
 
+const isUniqueIP = email => {
+  // fetch the record of the user from the airtable base (by email) then console log the IP address of the user
+  const joinRecords = joinsAirtable
+    .select({
+      filterByFormula: `{Email} = '${email}'`
+    })
+    .all()
+
+  // set the IP address of the user to a variable
+  const userIP = joinRecords[0].get('IP Address')
+
+  // fetch the list of IP addresses from the airtable base as an array
+  const ipRecords = joinsAirtable
+    .select({
+      filterByFormula: `{Email} = '${email}'`
+    })
+    .all()
+
+  const ipAddresses = ipRecords.map(record => record.get('IP Address'))
+
+  // check if the user's IP address is in the array of IP addresses more than once (if it is, return false)
+  if (ipAddresses.includes(userIP)) { return { isUniqueIP: false, userIP } } else { return { isUniqueIP: true, userIP } }
+
+}
+
+const isBlacklisted = async email => {
+
+  // fetch the list of blacklisted emails from the airtable base as an array. If the user's email is not in the array, return false
+  function getValues(spreadsheetId, range, callback) {
+    try {
+      gapi.client.sheets.spreadsheets.values.get({
+        spreadsheetId: spreadsheetId,
+        range: range,
+      }).then((response) => {
+        const result = response.result;
+        const numRows = result.values ? result.values.length : 0;
+        console.log(`${numRows} rows retrieved.`);
+        if (callback) callback(response);
+      });
+    } catch (err) {
+      document.getElementById('content').innerText = err.message;
+      return;
+    }
+  }
+
+
+  getValues('1Y-LN7DENenxxl-uNUbOz62aWwDmAo_yPhMuL445FHvE', 'Pizza Blacklist!C2:C', (response) => {
+
+    const values = response.result.values;
+    if (values.length > 0) {
+      console.log('Emails:');
+      values.map((row) => {
+        console.log(`${row[0]}`);
+      });
+    } else {
+      console.log('No data found.');
+    }
+  })
+
+  // set gblacklisted to the array of blacklisted emails
+  const gblacklisted = values
+
+  // check if the user's email is in the array of blacklisted emails (if it is, return true)
+  if (gblacklisted.includes(email)) { return true } else { return false }
+}
+
 const upload = data =>
   new Promise((resolve, reject) => {
-    airtable.create(data, (err, record) => {
+    pizzaAirtable.create(data, (err, record) => {
       if (err) return reject(err)
       return resolve(record.getId())
     })
@@ -42,7 +114,7 @@ const upload = data =>
 
 const approve = id =>
   new Promise((resolve, reject) => {
-    airtable.update(
+    pizzaAirtable.update(
       id,
       {
         Accepted: true
@@ -74,7 +146,7 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
 
   await ack()
 
-// react to the initial message with a pizza approval delivery emoji
+  // react to the initial message with a pizza approval delivery emoji
   await client.reactions.add({
     channel: body.channel.id,
     timestamp: body.message.ts,
@@ -96,7 +168,7 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "Hey, it's Orpheus the pizza delivery dino again... Hate to say this but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/ . If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>. Sworry :/"
+          text: "Hey, it's Orpheus the pizza delivery dino again... Hate to say this but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>. Sworry :/"
         }
       }
     ]
@@ -137,6 +209,22 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             text: {
               type: 'mrkdwn',
               text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>. Sworry :/`
+            }
+          }
+        ]
+      })
+    }
+
+    let blacklisted = isBlacklisted(email)
+    if (blacklisted) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>.`
             }
           }
         ]
@@ -196,6 +284,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
 Slack: <@${user}>
 Email: ${email}
+IP Address: ${isUniqueIP(email).isUniqueIP ? 'Unique' : `Not unique (${isUniqueIP(email).userIP})`}
 Club name/venue: ${club}
 Where they are getting pizza: ${pizzaShop}
 
@@ -336,7 +425,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
               type: 'plain_text',
               text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings.
               `}
-            },
+          },
 
           {
             type: 'input',
@@ -391,8 +480,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
       ]
     })
   }
-})
-;(async () => {
+}); (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000)
   console.log('⚡️ Bolt app is running!')
