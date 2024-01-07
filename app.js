@@ -1,5 +1,6 @@
 // Require the Bolt package (github.com/slackapi/bolt)
 const { App } = require('@slack/bolt')
+const { google } = require('googleapis');
 const Airtable = require('airtable')
 const blacklist = require('./assets/blacklist.json')
 require('dotenv').config()
@@ -10,6 +11,11 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
   socketMode: true
 })
+
+const sheets = google.sheets({
+  version: 'v4',
+  auth: process.env.GOOGLE_API_KEY
+});
 
 const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appInkSeZFfvW42h8'
@@ -68,7 +74,7 @@ const isBlacklisted = async email => {
   // fetch the list of blacklisted emails from the airtable base as an array. If the user's email is not in the array, return false
   function getValues(spreadsheetId, range, callback) {
     try {
-      gapi.client.sheets.spreadsheets.values.get({
+      sheets.spreadsheets.values.get({
         spreadsheetId: spreadsheetId,
         range: range,
       }).then((response) => {
