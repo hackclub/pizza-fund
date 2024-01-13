@@ -15,6 +15,7 @@ const upload = require('./func/upload.js')
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
   integrations: [
     new ProfilingIntegration(),
   ],
