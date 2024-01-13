@@ -24,35 +24,34 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
   console.log(user)
 
   // Update Airtable and send email
-  // const slack = await approve(action.value)
+  const slack = await approve(action.value)
 
-  // // TODO: Send ticket in appropriate channel
-  // await client.chat.postMessage({
-  //   channel: 'C05RZ6K7RS5',
-  //   blocks: [
-  //     {
-  //       type: 'section',
-  //       text: {
-  //         type: 'mrkdwn',
-  //         text: `<@${slack}> just got a pizza grant! 🎉 🍕`
-  //       }
-  //     }
-  //   ]
-  // })
+  await client.chat.postMessage({
+    channel: 'C05RZ6K7RS5',
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
+        }
+      }
+    ]
+  })
 
   await ack()
 
   // react to the initial message with a pizza approval delivery emoji
-  //   await client.reactions.add({
-  //     channel: body.channel.id,
-  //     timestamp: body.message.ts,
-  //     name: 'pizza-delivered'
-  //   })
+  await client.reactions.add({
+    channel: body.channel.id,
+    timestamp: body.message.ts,
+    name: 'pizza-delivered'
+  })
 
-    await say({
-      text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
-      thread_ts: body.message.ts
-    })
+  await say({
+    text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
+    thread_ts: body.message.ts
+  })
 
 
   let val = body.message.blocks
@@ -94,11 +93,11 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
   await ack()
 
   // react to the initial message with a bad-pizza emoji
-  // await client.reactions.add({
-  //   channel: body.channel.id,
-  //   timestamp: body.message.ts,
-  //   name: 'bad-pizza'
-  // })
+  await client.reactions.add({
+    channel: body.channel.id,
+    timestamp: body.message.ts,
+    name: 'bad-pizza'
+  })
 
   await say({ text: `:x: Rejected by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
 
@@ -136,6 +135,40 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       mapped[key] = obj[key].value
     }
     let { email, club, country, why, pizza, pizzaShop } = mapped
+
+    let userIsBlacklisted = await isBlacklisted(user, email, club)
+    console.log(userIsBlacklisted)
+    if (userIsBlacklisted.blacklisted == true) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+            }
+          }
+        ]
+      })
+    }
+
+    let applied = alreadyApplied(email)
+    if (applied) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+            }
+          }
+        ]
+      })
+    }
+
     // Make sure country is valid
     let valid = validCountry(country)
     if (!valid) {
@@ -168,54 +201,16 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       })
     }
 
-
-    let blacklisted = isBlacklisted(user.id, email, club)
-    if (blacklisted.blacklisted) {
-      return await client.chat.postMessage({
-        channel: user,
-        blocks: [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
-            }
-          }
-        ]
-      })
-    }
-
-
-
-
-              // Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
-
-    // let applied = alreadyApplied(email)
-    // if (applied) {
-    //   return await client.chat.postMessage({
-    //     channel: user,
-    //     blocks: [
-    //       {
-    //         type: 'section',
-    //         text: {
-    //           type: 'mrkdwn',
-    //           text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
-    //         }
-    //       }
-    //     ]
-    //   })
-    // }
-
     // Submit to Airtable
-    // const id = await upload({
-    //   'Email': email,
-    //   'Club': club,
-    //   'Country': country,
-    // 'Slack ID': user,
-    //   'Why': why,
-    //   'pizzaShop': pizzaShop,
-    //   'Pizza': pizza || ''
-    // })
+    const id = await upload({
+      'Email': email,
+      'Club': club,
+      'Country': country,
+      'Slack ID': user,
+      'Why': why,
+      'pizzaShop': pizzaShop,
+      'Pizza': pizza || ''
+    })
 
     // Respond to user
     await client.chat.postMessage({
@@ -265,7 +260,7 @@ That's it! Gotta go deliver these pizzas now.`
                 text: 'Accept!',
                 emoji: true
               },
-              value: user,
+              value: id,
               action_id: 'accept'
             },
             {
@@ -275,7 +270,7 @@ That's it! Gotta go deliver these pizzas now.`
                 text: 'Reject',
                 emoji: true
               },
-              value: user,
+              value: id,
               action_id: 'reject',
               style: 'danger'
             }
