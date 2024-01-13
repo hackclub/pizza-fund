@@ -18,10 +18,14 @@ const app = new App({
 })
 
 app.action('approve', async ({ body, action, client, ack, say }) => {
-  // get the user id who clicked the button
-  const user = body.user.id
-
-  console.log(user)
+  // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
+  if (body.user.id !== 'U05NX48GL3T') {
+    return await client.chat.postEphemeral({
+      channel: body.channel.id,
+      user: body.user.id,
+      text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
+    })
+  }
 
   // Update Airtable and send email
   const slack = await approve(action.value)
@@ -77,6 +81,15 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
+
+  // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
+  if (body.user.id !== 'U05NX48GL3T') {
+    return await client.chat.postEphemeral({
+      channel: body.channel.id,
+      user: body.user.id,
+      text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
+    })
+  }
 
   await deny(action.value)
 
