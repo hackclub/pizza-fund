@@ -1,6 +1,6 @@
 const { App } = require('@slack/bolt')
 const Airtable = require('airtable')
-const sentry = require('@sentry/node')
+const Sentry = require('@sentry/node')
 const { ProfilingIntegration } = require("@sentry/profiling-node");
 
 require('dotenv').config()
