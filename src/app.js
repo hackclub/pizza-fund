@@ -1,8 +1,14 @@
-// Require the Bolt package (github.com/slackapi/bolt)
 const { App } = require('@slack/bolt')
 const Airtable = require('airtable')
-const blacklist = require('./assets/blacklist.json')
 require('dotenv').config()
+
+const alreadyApplied = require('./func/checks/alreadyApplied.js')
+const isBlacklisted = require('./func/checks/isBlacklisted.js')
+const isUniqueIP = require('./func/checks/isUniqueIP')
+const validCountry = require('./func/checks/validCountry.js')
+
+const approve = require('./func/approve.js')
+const upload = require('./func/upload.js')
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -11,80 +17,64 @@ const app = new App({
   socketMode: true
 })
 
-const airtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
-  'appInkSeZFfvW42h8'
-)('Submissions')
-
-const validCountry = country => {
-  // Make sure country isn't on blacklist
-  country = country.toLowerCase()
-  if (blacklist.red.map(c => c.toLowerCase()).includes(country)) return false
-  return true
-}
-
-const alreadyApplied = email => {
-  const records = airtable
-    .select({
-      filterByFormula: `AND({Email} = '${email}', {Accepted} = 'true')`
-    })
-    .all()
-  // if records.length > 0, return true
-  if (records.length > 0) { return true } else { return false }
-}
-
-const upload = data =>
-  new Promise((resolve, reject) => {
-    airtable.create(data, (err, record) => {
-      if (err) return reject(err)
-      return resolve(record.getId())
-    })
-  })
-
-const approve = id =>
-  new Promise((resolve, reject) => {
-    airtable.update(
-      id,
-      {
-        Accepted: true
-      },
-      (err, record) => {
-        if (err) return reject(err)
-        return resolve(record.get('Slack ID'))
-      }
-    )
-  })
-
 app.action('accept', async ({ body, action, client, ack, say }) => {
-  // Update Airtable and send email
-  const slack = await approve(action.value)
+  // get the user id who clicked the button
+  const user = body.user.id
 
-  // TODO: Send ticket in appropriate channel
-  await client.chat.postMessage({
-    channel: 'C05RZ6K7RS5',
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
-        }
-      }
-    ]
-  })
+  console.log(user)
+
+  // Update Airtable and send email
+  // const slack = await approve(action.value)
+
+  // // TODO: Send ticket in appropriate channel
+  // await client.chat.postMessage({
+  //   channel: 'C05RZ6K7RS5',
+  //   blocks: [
+  //     {
+  //       type: 'section',
+  //       text: {
+  //         type: 'mrkdwn',
+  //         text: `<@${slack}> just got a pizza grant! 🎉 🍕`
+  //       }
+  //     }
+  //   ]
+  // })
 
   await ack()
 
-// react to the initial message with a pizza approval delivery emoji
-  await client.reactions.add({
-    channel: body.channel.id,
-    timestamp: body.message.ts,
-    name: 'pizza-delivered'
+  // react to the initial message with a pizza approval delivery emoji
+  //   await client.reactions.add({
+  //     channel: body.channel.id,
+  //     timestamp: body.message.ts,
+  //     name: 'pizza-delivered'
+  //   })
+
+    await say({
+      text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
+      thread_ts: body.message.ts
+    })
+
+
+  let val = body.message.blocks
+  // val.pop()
+
+  val.push({
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      // grant reject msg with timestamp
+      text: `Grant was Approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
+    }
   })
 
-  await say({
-    text: 'Approved. Email sent to Hack Club Bank 👍',
-    thread_ts: body.message.ts
+  await client.chat.update({
+    channel: body.channel.id,
+    ts: body.message.ts,
+    blocks: val
   })
+
+
+
 })
 
 app.action('reject', async ({ body, action, client, ack, say }) => {
@@ -96,7 +86,7 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: "Hey, it's Orpheus the pizza delivery dino again... Hate to say this but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/ . If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>. Sworry :/"
+          text: "Hey, it's Orpheus the pizza delivery dino again... So sorry, but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/"
         }
       }
     ]
@@ -104,14 +94,34 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
   await ack()
 
   // react to the initial message with a bad-pizza emoji
-  await client.reactions.add({
-    channel: body.channel.id,
-    timestamp: body.message.ts,
-    name: 'bad-pizza'
+  // await client.reactions.add({
+  //   channel: body.channel.id,
+  //   timestamp: body.message.ts,
+  //   name: 'bad-pizza'
+  // })
+
+  await say({ text: `:x: Rejected by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
+
+  let val = body.message.blocks
+  // val.pop()
+
+  val.push({
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      // grant reject msg with timestamp
+      text: `Grant was rejected at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
+    }
   })
 
-  await say({ text: 'Rejected. DM sent to user.', thread_ts: body.message.ts })
+  await client.chat.update({
+    channel: body.channel.id,
+    ts: body.message.ts,
+    blocks: val
+  })
+
 })
+
 
 app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
   await ack()
@@ -136,15 +146,14 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>. Sworry :/`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
             }
           }
         ]
       })
     }
 
-    let applied = alreadyApplied(email)
-    if (applied) {
+    if (country.toLowerCase() == 'india') {
       return await client.chat.postMessage({
         channel: user,
         blocks: [
@@ -152,23 +161,61 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <https://hackclub.slack.com/team/U03M1H014CX|Thomas>.`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. Unfortunately, we are unable to deliver to India at this time, while we work internally on some new pizza processes. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
             }
           }
         ]
       })
     }
 
+
+    let blacklisted = isBlacklisted(user.id, email, club)
+    if (blacklisted.blacklisted) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+            }
+          }
+        ]
+      })
+    }
+
+
+
+
+              // Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+
+    // let applied = alreadyApplied(email)
+    // if (applied) {
+    //   return await client.chat.postMessage({
+    //     channel: user,
+    //     blocks: [
+    //       {
+    //         type: 'section',
+    //         text: {
+    //           type: 'mrkdwn',
+    //           text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+    //         }
+    //       }
+    //     ]
+    //   })
+    // }
+
     // Submit to Airtable
-    const id = await upload({
-      'Email': email,
-      'Club': club,
-      'Country': country,
-      'Slack ID': user,
-      'Why': why,
-      'pizzaShop': pizzaShop,
-      'Pizza': pizza || ''
-    })
+    // const id = await upload({
+    //   'Email': email,
+    //   'Club': club,
+    //   'Country': country,
+    // 'Slack ID': user,
+    //   'Why': why,
+    //   'pizzaShop': pizzaShop,
+    //   'Pizza': pizza || ''
+    // })
 
     // Respond to user
     await client.chat.postMessage({
@@ -186,7 +233,9 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
     // Send to approval channel
     await client.chat.postMessage({
-      channel: 'C05RZATA3QR',
+      text: 'New pizza grant request!',
+      // channel: 'C05RZATA3QR',
+      channel: 'C06CNSA4QHH',
       blocks: [
         {
           type: 'section',
@@ -216,7 +265,7 @@ That's it! Gotta go deliver these pizzas now.`
                 text: 'Accept!',
                 emoji: true
               },
-              value: id,
+              value: user,
               action_id: 'accept'
             },
             {
@@ -244,7 +293,7 @@ That's it! Gotta go deliver these pizzas now.`
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>!`
+            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, email <mailto:pizza@hackclub.com|pizza@hackclub.com>!`
           }
         }
       ]
@@ -336,7 +385,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
               type: 'plain_text',
               text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings.
               `}
-            },
+          },
 
           {
             type: 'input',
@@ -385,15 +434,15 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <https://hackclub.slack.com/team/U041FQB8VK2|Thomas>!`
+            text: `Oops, there was an error getting your pizza delivered: \`${error.message}\`. If this keeps happening, message <mailto:pizza@hackclub.com|pizza@hackclub.com>!`
           }
         }
       ]
     })
   }
 })
-;(async () => {
-  // Start your app
-  await app.start(process.env.PORT || 3000)
-  console.log('⚡️ Bolt app is running!')
-})()
+  ; (async () => {
+    // Start your app
+    await app.start(process.env.PORT || 3000)
+    console.log('⚡️ Bolt app is running!')
+  })()
