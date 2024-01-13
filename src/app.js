@@ -1,5 +1,8 @@
 const { App } = require('@slack/bolt')
 const Airtable = require('airtable')
+const sentry = require('@sentry/node')
+const { ProfilingIntegration } = require("@sentry/profiling-node");
+
 require('dotenv').config()
 
 const alreadyApplied = require('./func/checks/alreadyApplied.js')
@@ -9,6 +12,18 @@ const validCountry = require('./func/checks/validCountry.js')
 
 const approve = require('./func/approve.js')
 const upload = require('./func/upload.js')
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  integrations: [
+    new ProfilingIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 1.0,
+});
+
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
