@@ -4,11 +4,11 @@ const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appInkSeZFfvW42h8'
 )('Submissions')
 
-const approve = (id) => new Promise((resolve, reject) => {
+const deny = (id) => new Promise((resolve, reject) => {
   pizzaAirtable.update(
     id,
     {
-      Status: 'Approved',
+      Status: 'Denied',
     },
     (err, record) => {
       if (err) return reject(err);
@@ -17,4 +17,4 @@ const approve = (id) => new Promise((resolve, reject) => {
   );
 });
 
-module.exports = approve;
+module.exports = deny;

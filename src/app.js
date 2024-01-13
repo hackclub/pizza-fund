@@ -17,7 +17,7 @@ const app = new App({
   socketMode: true
 })
 
-app.action('accept', async ({ body, action, client, ack, say }) => {
+app.action('approve', async ({ body, action, client, ack, say }) => {
   // get the user id who clicked the button
   const user = body.user.id
 
@@ -62,7 +62,7 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
     text: {
       type: 'mrkdwn',
       // grant reject msg with timestamp
-      text: `Grant was Approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
+      text: `Grant was approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
     }
   })
 
@@ -76,7 +76,11 @@ app.action('accept', async ({ body, action, client, ack, say }) => {
 
 })
 
-app.action('reject', async ({ body, action, client, ack, say }) => {
+app.action('deny', async ({ body, action, client, ack, say }) => {
+
+  await deny(action.value)
+
+
   // Send DM to user rejecting their grant :/
   await client.chat.postMessage({
     channel: action.value,
@@ -99,7 +103,7 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
     name: 'bad-pizza'
   })
 
-  await say({ text: `:x: Rejected by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
+  await say({ text: `:x: Denied by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
 
   let val = body.message.blocks
   // val.pop()
@@ -109,7 +113,7 @@ app.action('reject', async ({ body, action, client, ack, say }) => {
     text: {
       type: 'mrkdwn',
       // grant reject msg with timestamp
-      text: `Grant was rejected at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
+      text: `Grant was denied at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
     }
   })
 
@@ -162,7 +166,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for or recived a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
             }
           }
         ]
@@ -229,8 +233,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     // Send to approval channel
     await client.chat.postMessage({
       text: 'New pizza grant request!',
-      // channel: 'C05RZATA3QR',
-      channel: 'C06CNSA4QHH',
+      channel: 'C05RZATA3QR',
       blocks: [
         {
           type: 'section',
@@ -257,22 +260,61 @@ That's it! Gotta go deliver these pizzas now.`
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: 'Accept!',
+                text: 'Approve!',
                 emoji: true
               },
               value: id,
-              action_id: 'accept'
+              action_id: 'approve',
+              style: 'primary',
+              confirm: {
+                "title": {
+                  "type": "plain_text",
+                  "text": "Are you sure?"
+                },
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "Are you sure you want to **approve** this grant?"
+                },
+                "confirm": {
+                  "type": "plain_text",
+                  "text": "Yes! Do it!"
+                },
+
+                "deny": {
+                  "type": "plain_text",
+                  "text": "Stop, I've changed my mind!"
+                }
+              }
             },
             {
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: 'Reject',
+                text: 'Deny',
                 emoji: true
               },
               value: id,
-              action_id: 'reject',
-              style: 'danger'
+              action_id: 'deny',
+              style: 'danger',
+              confirm: {
+                "title": {
+                  "type": "plain_text",
+                  "text": "Are you sure?"
+                },
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "Are you sure you want to **deny** this grant?"
+                },
+                "confirm": {
+                  "type": "plain_text",
+                  "text": "Yes! Do it!"
+                },
+
+                "deny": {
+                  "type": "plain_text",
+                  "text": "Stop, I've changed my mind!"
+                }
+              }
             }
           ]
         }
