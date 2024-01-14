@@ -271,6 +271,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
 Slack: <@${user}>
 Email: ${email}
+IP Address: ${isUniqueIP(email).isUniqueIP ? 'Unique' : `Not unique (${isUniqueIP(email).userIP})`}
 Club name/venue: ${club}
 Where they are getting pizza: ${pizzaShop}
 
