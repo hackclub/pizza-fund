@@ -1,8 +1,15 @@
 {
-  "name": "js",
+  "name": "pizza-fund",
   "version": "1.0.0",
-  "description": "",
+  "description": "Powering the Hack Club Pizza Fund. https://hackclub.com/pizza",
   "main": "src/app.js",
+  "maintainers": [
+    {
+      "name": "Jasper Mayone",
+      "email": "me@jaspermayone.com",
+      "url": "https://jaspermayone.com"
+    }
+  ],
   "scripts": {
     "format": "prettier --ignore-path ./.prettierignore --write .",
     "start": "node src/app.js",
