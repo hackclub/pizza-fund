@@ -47,6 +47,7 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
   const slack = await approve(action.value)
 
   await client.chat.postMessage({
+    text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
     channel: 'C05RZ6K7RS5',
     blocks: [
       {
@@ -170,10 +171,8 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     let { email, club, country, why, pizza, pizzaShop } = mapped
 
     let userIsBlacklisted = await isBlacklisted(user, email, club)
-    console.log(userIsBlacklisted)
     if (userIsBlacklisted.blacklisted == true) {
       return await client.chat.postMessage({
-        channel: user,
         blocks: [
           {
             type: 'section',

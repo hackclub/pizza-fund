@@ -8,7 +8,8 @@ const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
 const alreadyApplied = async (email) => {
   const records = pizzaAirtable
     .select({
-      filterByFormula: `AND({Email} = '${email}', {Accepted} = 'true')`
+      // filterByFormula: `AND({Email} = '${email}', {Status} = 'Approved')`
+      filterByFormula: `AND({Email} = '${email}')`
     })
     .all();
   // if records.length > 0, return true
