@@ -6,18 +6,22 @@ const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
 
 
 const alreadyApplied = async (email) => {
-  const records = pizzaAirtable
+  const records = await pizzaAirtable
     .select({
       // filterByFormula: `AND({Email} = '${email}', {Status} = 'Approved')`
       filterByFormula: `AND({Email} = '${email}')`
     })
     .all();
-  // if records.length > 0, return true
-  if ((await records).length > 0) {
-    return true;
-  } else {
-    return false;
-  }
+
+console.log(records)
+
+// check to see if records is an empty array
+if (records.length === 0) {
+  return false;
+} else {
+  return true;
+}
+
 };
 
 module.exports = alreadyApplied;

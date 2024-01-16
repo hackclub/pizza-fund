@@ -185,7 +185,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       })
     }
 
-    let applied = alreadyApplied(email)
+    let applied = await alreadyApplied(email)
     if (applied) {
       return await client.chat.postMessage({
         channel: user,
@@ -202,7 +202,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     }
 
     // Make sure country is valid
-    let valid = validCountry(country)
+    let valid = await validCountry(country)
     if (!valid) {
       return await client.chat.postMessage({
         channel: user,
@@ -271,7 +271,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
 Slack: <@${user}>
 Email: ${email}
-IP Address: ${isUniqueIP(email).isUniqueIP ? 'Unique' : `Not unique (${isUniqueIP(email).userIP})`}
+IP Address: ${await isUniqueIP(email).isUniqueIP ? 'Unique' : `Not unique (${await isUniqueIP(email).userIP})`}
 Club name/venue: ${club}
 Where they are getting pizza: ${pizzaShop}
 
