@@ -108,6 +108,8 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
     })
   } else {
 
+    console.log(action.value)
+
     await deny(action.value)
 
 
@@ -510,6 +512,5 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
   ; (async () => {
     // Start your app
     await app.start(process.env.PORT || 3000)
-    console.log(process.env.PORT)
     console.log('⚡️ Bolt app is running!')
   })()
