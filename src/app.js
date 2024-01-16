@@ -42,60 +42,59 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
       user: body.user.id,
       text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
     })
-  }
+  } else {
 
-  // Update Airtable and send email
-  const slack = await approve(action.value)
+    // Update Airtable and send email
+    const slack = await approve(action.value)
 
-  await client.chat.postMessage({
-    text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
-    channel: 'C05RZ6K7RS5',
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
+    await client.chat.postMessage({
+      text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
+      channel: 'C05RZ6K7RS5',
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `<@${slack}> just got a pizza grant! 🎉 🍕`
+          }
         }
+      ]
+    })
+
+    await ack()
+
+    // react to the initial message with a pizza approval delivery emoji
+    await client.reactions.add({
+      channel: body.channel.id,
+      timestamp: body.message.ts,
+      name: 'pizza-delivered'
+    })
+
+    await say({
+      text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
+      thread_ts: body.message.ts
+    })
+
+
+    let val = await body.message.blocks
+    await val.pop()
+
+    await val.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        // grant reject msg with timestamp
+        text: `Grant was approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
       }
-    ]
-  })
+    })
 
-  await ack()
+    await client.chat.update({
+      channel: body.channel.id,
+      ts: body.message.ts,
+      blocks: val
+    })
 
-  // react to the initial message with a pizza approval delivery emoji
-  await client.reactions.add({
-    channel: body.channel.id,
-    timestamp: body.message.ts,
-    name: 'pizza-delivered'
-  })
-
-  await say({
-    text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
-    thread_ts: body.message.ts
-  })
-
-
-  let val = body.message.blocks
-  // val.pop()
-
-  val.push({
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      // grant reject msg with timestamp
-      text: `Grant was approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
-    }
-  })
-
-  await client.chat.update({
-    channel: body.channel.id,
-    ts: body.message.ts,
-    blocks: val
-  })
-
-
-
+  }
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
@@ -107,63 +106,63 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
       user: body.user.id,
       text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
     })
-  }
+  } else {
 
-  await deny(action.value)
+    await deny(action.value)
 
 
-  // Send DM to user rejecting their grant :/
-  await client.chat.postMessage({
-    channel: action.value,
-    blocks: [
-      {
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: "Hey, it's Orpheus the pizza delivery dino again... So sorry, but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/"
+    // Send DM to user rejecting their grant :/
+    await client.chat.postMessage({
+      channel: action.value,
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: "Hey, it's Orpheus the pizza delivery dino again... So sorry, but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/"
+          }
         }
+      ]
+    })
+    await ack()
+
+    // react to the initial message with a bad-pizza emoji
+    await client.reactions.add({
+      channel: body.channel.id,
+      timestamp: body.message.ts,
+      name: 'bad-pizza'
+    })
+
+    await say({ text: `:x: Denied by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
+
+    let val = await body.message.blocks
+    val.pop()
+
+    await val.push({
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        // grant reject msg with timestamp
+        text: `Grant was denied at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
       }
-    ]
-  })
-  await ack()
+    })
 
-  // react to the initial message with a bad-pizza emoji
-  await client.reactions.add({
-    channel: body.channel.id,
-    timestamp: body.message.ts,
-    name: 'bad-pizza'
-  })
-
-  await say({ text: `:x: Denied by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
-
-  let val = body.message.blocks
-  // val.pop()
-
-  val.push({
-    type: 'section',
-    text: {
-      type: 'mrkdwn',
-      // grant reject msg with timestamp
-      text: `Grant was denied at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
-    }
-  })
-
-  await client.chat.update({
-    channel: body.channel.id,
-    ts: body.message.ts,
-    blocks: val
-  })
-
+    await client.chat.update({
+      channel: body.channel.id,
+      ts: body.message.ts,
+      blocks: val
+    })
+  }
 })
 
 
 app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
   await ack()
 
-  const user = body.user.id
+  const user = await body.user.id
 
   try {
-    let val = view.state.values
+    let val = await view.state.values
     let mapped = {}
     for (let obj of Object.values(val)) {
       let key = Object.keys(obj)[0]
