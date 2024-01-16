@@ -14,17 +14,17 @@ const approve = require('./func/approve.js')
 const deny = require('./func/deny.js')
 const upload = require('./func/upload.js')
 
-// Sentry.init({
-//   dsn: process.env.SENTRY_DSN,
-//   environment: process.env.NODE_ENV,
-//   integrations: [
-//     new ProfilingIntegration(),
-//   ],
-//   // Performance Monitoring
-//   tracesSampleRate: 1.0, //  Capture 100% of the transactions
-//   // Set sampling rate for profiling - this is relative to tracesSampleRate
-//   profilesSampleRate: 1.0,
-// });
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  integrations: [
+    new ProfilingIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 1.0,
+});
 
 
 const app = new App({
@@ -171,20 +171,20 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     }
     let { email, club, country, why, pizza, pizzaShop } = mapped
 
-    // let userIsBlacklisted = await isBlacklisted(user, email, club)
-    // if (userIsBlacklisted.blacklisted == true) {
-    //   return await client.chat.postMessage({
-    //     blocks: [
-    //       {
-    //         type: 'section',
-    //         text: {
-    //           type: 'mrkdwn',
-    //           text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
-    //         }
-    //       }
-    //     ]
-    //   })
-    // }
+    let userIsBlacklisted = await isBlacklisted(user, email, club)
+    if (userIsBlacklisted.blacklisted == true) {
+      return await client.chat.postMessage({
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+            }
+          }
+        ]
+      })
+    }
 
     let applied = await alreadyApplied(email)
     if (applied) {
@@ -203,47 +203,47 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     }
 
     // Make sure country is valid
-    // let valid = await validCountry(country)
-    // if (!valid) {
-    //   return await client.chat.postMessage({
-    //     channel: user,
-    //     blocks: [
-    //       {
-    //         type: 'section',
-    //         text: {
-    //           type: 'mrkdwn',
-    //           text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
-    //         }
-    //       }
-    //     ]
-    //   })
-    // }
+    let valid = await validCountry(country)
+    if (!valid) {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
+            }
+          }
+        ]
+      })
+    }
 
-    // if (country.toLowerCase() == 'india') {
-    //   return await client.chat.postMessage({
-    //     channel: user,
-    //     blocks: [
-    //       {
-    //         type: 'section',
-    //         text: {
-    //           type: 'mrkdwn',
-    //           text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. Unfortunately, we are unable to deliver to India at this time, while we work internally on some new pizza processes. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
-    //         }
-    //       }
-    //     ]
-    //   })
-    // }
+    if (country.toLowerCase() == 'india') {
+      return await client.chat.postMessage({
+        channel: user,
+        blocks: [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. Unfortunately, we are unable to deliver to India at this time, while we work internally on some new pizza processes. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
+            }
+          }
+        ]
+      })
+    }
 
-    // // Submit to Airtable
-    // const id = await upload({
-    //   'Email': email,
-    //   'Club': club,
-    //   'Country': country,
-    //   'Slack ID': user,
-    //   'Why': why,
-    //   'pizzaShop': pizzaShop,
-    //   'Pizza': pizza || ''
-    // })
+    // Submit to Airtable
+    const id = await upload({
+      'Email': email,
+      'Club': club,
+      'Country': country,
+      'Slack ID': user,
+      'Why': why,
+      'pizzaShop': pizzaShop,
+      'Pizza': pizza || ''
+    })
 
     // Respond to user
     await client.chat.postMessage({
