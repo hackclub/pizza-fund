@@ -11,6 +11,7 @@ const isUniqueIP = require('./func/checks/isUniqueIP')
 const validCountry = require('./func/checks/validCountry.js')
 
 const approve = require('./func/approve.js')
+const deny = require('./func/deny.js')
 const upload = require('./func/upload.js')
 
 Sentry.init({
