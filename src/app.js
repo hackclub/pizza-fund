@@ -498,5 +498,5 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
 (async () => {
   // Start your app
   await app.start(process.env.PORT || 3000)
-  console.log(`⚡️ Bolt app is running in env ${node_environment}!`)
+  console.log(`⚡️ Bolt app is running in env ${node_environment}! Keep on, pizza on!`)
 })()
