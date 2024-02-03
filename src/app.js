@@ -33,64 +33,55 @@ const app = new App({
 })
 
 app.action('approve', async ({ body, action, client, ack, say }) => {
-  // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
-  if (body.user.id !== 'U05NX48GL3T') {
-    return await client.chat.postEphemeral({
-      channel: body.channel.id,
-      user: body.user.id,
-      text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
-    })
-  } else {
-    // Update Airtable and send email
-    const slack = await approve(action.value)
+  // Update Airtable and send email
+  const slack = await approve(action.value)
 
-    await client.chat.postMessage({
-      text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
-      channel: 'C05RZ6K7RS5',
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `<@${slack}> just got a pizza grant! 🎉 🍕`
-          }
+  await client.chat.postMessage({
+    text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
+    channel: 'C05RZ6K7RS5',
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
         }
-      ]
-    })
-
-    await ack()
-
-    // react to the initial message with a pizza approval delivery emoji
-    await client.reactions.add({
-      channel: body.channel.id,
-      timestamp: body.message.ts,
-      name: 'pizza-delivered'
-    })
-
-    await say({
-      text: `:white_check_mark: Approved by <@${body.user.id
-        } > at < !date ^ ${Math.floor(Date.now() / 1000)} ^ { date_num } { time_secs } | ${new Date().toLocaleString()} >.Email sent to Jasper for fufillment.`,
-      thread_ts: body.message.ts
-    })
-
-    let val = await body.message.blocks
-    await val.pop()
-
-    await val.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        // grant reject msg with timestamp
-        text: `Grant was approved at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : white_check_mark: `
       }
-    })
+    ]
+  })
 
-    await client.chat.update({
-      channel: body.channel.id,
-      ts: body.message.ts,
-      blocks: val
-    })
-  }
+  await ack()
+
+  // react to the initial message with a pizza approval delivery emoji
+  await client.reactions.add({
+    channel: body.channel.id,
+    timestamp: body.message.ts,
+    name: 'pizza-delivered'
+  })
+
+  await say({
+    text: `:white_check_mark: Approved by <@${body.user.id
+      } > at < !date ^ ${Math.floor(Date.now() / 1000)} ^ { date_num } { time_secs } | ${new Date().toLocaleString()} >.Email sent to Jasper for fufillment.`,
+    thread_ts: body.message.ts
+  })
+
+  let val = await body.message.blocks
+  await val.pop()
+
+  await val.push({
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      // grant reject msg with timestamp
+      text: `Grant was approved at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : white_check_mark: `
+    }
+  })
+
+  await client.chat.update({
+    channel: body.channel.id,
+    ts: body.message.ts,
+    blocks: val
+  })
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
@@ -118,8 +109,6 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
       ]
     })
     await ack()
-
-    console.log("DENY SUCCESS")
 
     // react to the initial message with a bad-pizza emoji
     await client.reactions.add({
