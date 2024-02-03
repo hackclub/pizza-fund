@@ -35,7 +35,6 @@ const app = new App({
 app.action('approve', async ({ body, action, client, ack, say }) => {
   // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
   if (body.user.id !== 'U05NX48GL3T') {
-    // if (body.user.id !== 'U06CRD94MRS') {
     return await client.chat.postEphemeral({
       channel: body.channel.id,
       user: body.user.id,
