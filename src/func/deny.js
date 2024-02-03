@@ -1,15 +1,20 @@
-const Airtable = require('airtable');
+const Airtable = require('airtable')
 
 const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appInkSeZFfvW42h8'
 )('Submissions')
 
-const deny = (id) => new Promise((resolve, reject) => {
-  pizzaAirtable.update(id, { Status: 'Denied' }, (err, record) => {
-    if (err) return reject(err);
-    return resolve(record.getId());
-  });
+const deny = async (id) => {
+  await pizzaAirtable.update(
+    [
+      {
+        "id": id,
+        "fields": {
+          "Status": "Denied"
+        }
+      }
+    ]
+  )
 }
-);
 
-module.exports = deny;
+module.exports = deny

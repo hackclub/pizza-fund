@@ -1,4 +1,4 @@
-const Airtable = require('airtable');
+const Airtable = require('airtable')
 
 const joinsAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appaqcJtn33vb59Au'
@@ -10,23 +10,26 @@ const isUniqueIP = async (email) => {
     .select({
       filterByFormula: `{Email} = '${email}'`
     })
-    .all();
+    .all()
 
   // set the IP address of the user to a variable
-  const userIP = joinRecords[0].get('IP Address');
+  const userIP = joinRecords[0].get('IP Address')
 
   // fetch the list of IP addresses from the airtable base as an array
   const ipRecords = await joinsAirtable
     .select({
       filterByFormula: `{Email} = '${email}'`
     })
-    .all();
+    .all()
 
-  const ipAddresses = (ipRecords).map(record => record.get('IP Address'));
+  const ipAddresses = ipRecords.map((record) => record.get('IP Address'))
 
   // check if the user's IP address is in the array of IP addresses more than once (if it is, return false)
-  if (ipAddresses.includes(userIP)) { return { isUniqueIP: false, userIP }; } else { return { isUniqueIP: true, userIP }; }
+  if (ipAddresses.includes(userIP)) {
+    return { isUniqueIP: false, userIP }
+  } else {
+    return { isUniqueIP: true, userIP }
+  }
+}
 
-};
-
-module.exports = isUniqueIP;
+module.exports = isUniqueIP

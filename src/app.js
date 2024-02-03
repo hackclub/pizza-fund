@@ -1,8 +1,7 @@
 const { App } = require('@slack/bolt')
 const Airtable = require('airtable')
 const Sentry = require('@sentry/node')
-const { ProfilingIntegration } = require("@sentry/profiling-node");
-
+const { ProfilingIntegration } = require('@sentry/profiling-node')
 require('dotenv').config()
 
 const alreadyApplied = require('./func/checks/alreadyApplied.js')
@@ -14,18 +13,17 @@ const approve = require('./func/approve.js')
 const deny = require('./func/deny.js')
 const upload = require('./func/upload.js')
 
+const node_environment = process.env.NODE_ENV
+
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  integrations: [
-    new ProfilingIntegration(),
-  ],
+  integrations: [new ProfilingIntegration()],
   // Performance Monitoring
   tracesSampleRate: 1.0, //  Capture 100% of the transactions
   // Set sampling rate for profiling - this is relative to tracesSampleRate
-  profilesSampleRate: 1.0,
-});
-
+  profilesSampleRate: 1.0
+})
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -36,14 +34,14 @@ const app = new App({
 
 app.action('approve', async ({ body, action, client, ack, say }) => {
   // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
-  if (body.user.id !== 'U05NX48GL3T') {
+  // if (body.user.id !== 'U05NX48GL3T') {
+  if (body.user.id !== 'U06CRD94MRS') {
     return await client.chat.postEphemeral({
       channel: body.channel.id,
       user: body.user.id,
       text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
     })
   } else {
-
     // Update Airtable and send email
     const slack = await approve(action.value)
 
@@ -71,10 +69,10 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
     })
 
     await say({
-      text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
+      text: `:white_check_mark: Approved by <@${body.user.id
+        } > at < !date ^ ${Math.floor(Date.now() / 1000)} ^ { date_num } { time_secs } | ${new Date().toLocaleString()} >.Email sent to Jasper for fufillment.`,
       thread_ts: body.message.ts
     })
-
 
     let val = await body.message.blocks
     await val.pop()
@@ -84,7 +82,7 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
       text: {
         type: 'mrkdwn',
         // grant reject msg with timestamp
-        text: `Grant was approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
+        text: `Grant was approved at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : white_check_mark: `
       }
     })
 
@@ -93,25 +91,19 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
       ts: body.message.ts,
       blocks: val
     })
-
   }
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
-
   // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
-  if (body.user.id !== 'U05NX48GL3T') {
+  if (body.user.id !== 'U06CRD94MRS') {
     return await client.chat.postEphemeral({
       channel: body.channel.id,
       user: body.user.id,
       text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
-    })
+    }).then(ack())
   } else {
-
-    console.log(action.value)
-
     await deny(action.value)
-
 
     // Send DM to user rejecting their grant :/
     await client.chat.postMessage({
@@ -128,6 +120,8 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
     })
     await ack()
 
+    console.log("DENY SUCCESS")
+
     // react to the initial message with a bad-pizza emoji
     await client.reactions.add({
       channel: body.channel.id,
@@ -135,7 +129,10 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
       name: 'bad-pizza'
     })
 
-    await say({ text: `:x: Denied by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`, thread_ts: body.message.ts })
+    await say({
+      text: `: x: Denied by < @${body.user.id}> at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}>.DM was sent to user.`,
+      thread_ts: body.message.ts
+    })
 
     let val = await body.message.blocks
     val.pop()
@@ -145,7 +142,7 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
       text: {
         type: 'mrkdwn',
         // grant reject msg with timestamp
-        text: `Grant was denied at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
+        text: `Grant was denied at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : x: `
       }
     })
 
@@ -156,7 +153,6 @@ app.action('deny', async ({ body, action, client, ack, say }) => {
     })
   }
 })
-
 
 app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
   await ack()
@@ -180,7 +176,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you're on the pizza blacklist.If you think this is incorrect, please reach out to < mailto:pizza @hackclub.com| pizza@hackclub.com>.`
             }
           }
         ]
@@ -196,7 +192,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for or recived a pizza grant. If you think this is incorrect, please reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>.`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. It looks like you've already applied for or recived a pizza grant.If you think this is incorrect, please reach out to < mailto:pizza @hackclub.com| pizza@hackclub.com>.`
             }
           }
         ]
@@ -213,7 +209,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/`
+              text: `Hey, it's Orpheus the pizza delivery dino! Just received your order. I don't think Hack Club can deliver to ${country}. If you have any questions, reach out to < mailto:pizza @hackclub.com| pizza@hackclub.com>.Sworry : /`
             }
           }
         ]
@@ -237,13 +233,13 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
     // Submit to Airtable
     const id = await upload({
-      'Email': email,
-      'Club': club,
-      'Country': country,
+      Email: email,
+      Club: club,
+      Country: country,
       'Slack ID': user,
-      'Why': why,
-      'pizzaShop': pizzaShop,
-      'Pizza': pizza || ''
+      Why: why,
+      pizzaShop: pizzaShop,
+      Pizza: pizza || ''
     })
 
     // Respond to user
@@ -298,22 +294,22 @@ That's it! Gotta go deliver these pizzas now.`
               action_id: 'approve',
               style: 'primary',
               confirm: {
-                "title": {
-                  "type": "plain_text",
-                  "text": "Are you sure?"
+                title: {
+                  type: 'plain_text',
+                  text: 'Are you sure?'
                 },
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "Are you sure you want to approve this grant?"
+                text: {
+                  type: 'mrkdwn',
+                  text: 'Are you sure you want to approve this grant?'
                 },
-                "confirm": {
-                  "type": "plain_text",
-                  "text": "Yes! Do it!"
+                confirm: {
+                  type: 'plain_text',
+                  text: 'Yes! Do it!'
                 },
 
-                "deny": {
-                  "type": "plain_text",
-                  "text": "Stop, I've changed my mind!"
+                deny: {
+                  type: 'plain_text',
+                  text: "Stop, I've changed my mind!"
                 }
               }
             },
@@ -328,22 +324,22 @@ That's it! Gotta go deliver these pizzas now.`
               action_id: 'deny',
               style: 'danger',
               confirm: {
-                "title": {
-                  "type": "plain_text",
-                  "text": "Are you sure?"
+                title: {
+                  type: 'plain_text',
+                  text: 'Are you sure?'
                 },
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "Are you sure you want to deny this grant?"
+                text: {
+                  type: 'mrkdwn',
+                  text: 'Are you sure you want to deny this grant?'
                 },
-                "confirm": {
-                  "type": "plain_text",
-                  "text": "Yes! Do it!"
+                confirm: {
+                  type: 'plain_text',
+                  text: 'Yes! Do it!'
                 },
 
-                "deny": {
-                  "type": "plain_text",
-                  "text": "Stop, I've changed my mind!"
+                deny: {
+                  type: 'plain_text',
+                  text: "Stop, I've changed my mind!"
                 }
               }
             }
@@ -452,7 +448,8 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             hint: {
               type: 'plain_text',
               text: `Keep in mind that your transactions will be public and that you will have to upload receipts for any purchase you make. These funds can only be used for group meals for club meetings.
-              `}
+              `
+            }
           },
 
           {
@@ -508,9 +505,10 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
       ]
     })
   }
-})
-  ; (async () => {
-    // Start your app
-    await app.start(process.env.PORT || 3000)
-    console.log('⚡️ Bolt app is running!')
-  })()
+});
+
+(async () => {
+  // Start your app
+  await app.start(process.env.PORT || 3000)
+  console.log(`⚡️ Bolt app is running in env ${node_environment}!`)
+})()

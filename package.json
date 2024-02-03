@@ -19,20 +19,20 @@
   "author": "Jasper Mayone <me@jaspermayone.com>",
   "license": "MIT",
   "dependencies": {
-    "@sentry/cli": "^2.25.0",
-    "@sentry/node": "^7.93.0",
+    "@sentry/cli": "^2.27.0",
+    "@sentry/node": "^7.99.0",
     "@sentry/profiling-node": "^1.3.5",
     "@slack/bolt": "^3.17.1",
     "airtable": "^0.12.2",
-    "dotenv": "^16.3.1",
-    "fs": "^0.0.1-security",
+    "dotenv": "^16.4.1",
+    "fs": "0.0.1-security",
     "googleapis": "^130.0.0",
     "path": "^0.12.7"
   },
   "devDependencies": {
     "express": "^4.18.2",
-    "nodemon": "^3.0.2",
+    "nodemon": "^3.0.3",
     "open": "^10.0.3",
-    "prettier": "^3.2.1"
+    "prettier": "^3.2.4"
   }
 }
