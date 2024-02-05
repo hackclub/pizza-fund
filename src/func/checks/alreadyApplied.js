@@ -4,11 +4,11 @@ const pizzaAirtable = new Airtable({ apiKey: process.env.AIRTABLE_KEY }).base(
   'appInkSeZFfvW42h8'
 )('Submissions')
 
-const alreadyApplied = async (Email) => {
+const alreadyApplied = async (email) => {
   const records = await pizzaAirtable
     // fetch the record of the user from the airtable base (by email) then console log the IP address of the user
     .select({
-      filterByFormula: `{Email} = '${Email}'` // Make sure that 'Email' matches the actual field name in your Airtable base
+      filterByFormula: `{Email} = '${email}'`
     })
     .all();
 

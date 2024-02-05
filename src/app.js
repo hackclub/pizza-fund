@@ -6,12 +6,31 @@ require('dotenv').config()
 
 const alreadyApplied = require('./func/checks/alreadyApplied.js')
 const isBlacklisted = require('./func/checks/isBlacklisted.js')
-const isUniqueIP = require('./func/checks/isUniqueIP')
 const validCountry = require('./func/checks/validCountry.js')
+const getSlackUser = require('./func/getSlackUser.js')
 
 const approve = require('./func/approve.js')
 const deny = require('./func/deny.js')
 const upload = require('./func/upload.js')
+
+let pizzaApprovalChannel
+let pizzaPartyChannel
+
+if (process.env.NODE_ENV === "production") {
+
+  pizzaApprovalChannel = "C05RZATA3QR"
+  pizzaPartyChannel = "C05RZ6K7RS5"
+
+
+} else if (process.env.NODE_ENV === "development") {
+
+  pizzaApprovalChannel = "C06CNSA4QHH"
+  pizzaPartyChannel = "C06CL2B1WJH"
+
+} else {
+  console.log("UNKNOWN ENVIRORMENT")
+}
+
 
 const node_environment = process.env.NODE_ENV
 
@@ -33,18 +52,18 @@ const app = new App({
 })
 
 app.action('approve', async ({ body, action, client, ack, say }) => {
-  // Update Airtable and send email
-  const slack = await approve(action.value)
+
+  const sUser = await getSlackUser(action.value)
 
   await client.chat.postMessage({
-    text: `<@${slack}> just got a pizza grant! 🎉 🍕`,
-    channel: 'C05RZ6K7RS5',
+    text: `<@${sUser}> just got a pizza grant! 🎉 🍕`,
+    channel: pizzaPartyChannel,
     blocks: [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<@${slack}> just got a pizza grant! 🎉 🍕`
+          text: `<@${sUser}> just got a pizza grant! 🎉 🍕`
         }
       }
     ]
@@ -53,15 +72,16 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
   await ack()
 
   // react to the initial message with a pizza approval delivery emoji
-  await client.reactions.add({
-    channel: body.channel.id,
-    timestamp: body.message.ts,
-    name: 'pizza-delivered'
-  })
+  if (process.env.NODE_ENV === "production") {
+    await client.reactions.add({
+      channel: body.channel.id,
+      timestamp: body.message.ts,
+      name: 'pizza-delivered'
+    })
+  }
 
   await say({
-    text: `:white_check_mark: Approved by <@${body.user.id
-      } > at < !date ^ ${Math.floor(Date.now() / 1000)} ^ { date_num } { time_secs } | ${new Date().toLocaleString()} >.Email sent to Jasper for fufillment.`,
+    text: `:white_check_mark: Approved by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. Email sent to Jasper for fufillment.`,
     thread_ts: body.message.ts
   })
 
@@ -73,7 +93,7 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
     text: {
       type: 'mrkdwn',
       // grant reject msg with timestamp
-      text: `Grant was approved at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : white_check_mark: `
+      text: `Grant was approved at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :white_check_mark:`
     }
   })
 
@@ -85,61 +105,58 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
-  // check if the user who clicked the button has the slack id of U05NX48GL3T (jasper)
-  if (body.user.id !== 'U06CRD94MRS') {
-    return await client.chat.postEphemeral({
-      channel: body.channel.id,
-      user: body.user.id,
-      text: "Sorry, you don't have permission to do that! Jasper is curently the only one with Pizza Permissions, until we implement some new systems!"
-    }).then(ack())
-  } else {
-    await deny(action.value)
 
-    // Send DM to user rejecting their grant :/
-    await client.chat.postMessage({
-      channel: action.value,
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: "Hey, it's Orpheus the pizza delivery dino again... So sorry, but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/"
-          }
+  const sUser = await getSlackUser(action.value)
+
+  // Send DM to user rejecting their grant :/
+  await client.chat.postMessage({
+    channel: sUser,
+    blocks: [
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: "Hey, it's Orpheus the pizza delivery dino again... So sorry, but your pizza grant was not accepted. Please complete your club application at https://apply.hackclub.com/. If you've already applied, please wait to be onboarded before we can accept your pizza grant. If you have any questions, reach out to <mailto:pizza@hackclub.com|pizza@hackclub.com>. Sworry :/"
         }
-      ]
-    })
-    await ack()
+      }
+    ]
+  })
+  await ack()
 
-    // react to the initial message with a bad-pizza emoji
+  // react to the initial message with a bad-pizza emoji
+  if (process.env.NODE_ENV === "production") {
     await client.reactions.add({
       channel: body.channel.id,
       timestamp: body.message.ts,
       name: 'bad-pizza'
     })
-
-    await say({
-      text: `: x: Denied by < @${body.user.id}> at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}>.DM was sent to user.`,
-      thread_ts: body.message.ts
-    })
-
-    let val = await body.message.blocks
-    val.pop()
-
-    await val.push({
-      type: 'section',
-      text: {
-        type: 'mrkdwn',
-        // grant reject msg with timestamp
-        text: `Grant was denied at < !date ^ ${Math.floor(Date.now() / 1000)}^ { date_num } { time_secs }| ${new Date().toLocaleString()}> : x: `
-      }
-    })
-
-    await client.chat.update({
-      channel: body.channel.id,
-      ts: body.message.ts,
-      blocks: val
-    })
   }
+
+
+  await say({
+    text: `:x: Denied by <@${body.user.id}> at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}>. DM was sent to user.`,
+    thread_ts: body.message.ts
+  })
+
+
+  let val = await body.message.blocks
+  val.pop()
+
+  await val.push({
+    type: 'section',
+    text: {
+      type: 'mrkdwn',
+      // grant reject msg with timestamp
+      text: `Grant was denied at <!date^${Math.floor(Date.now() / 1000)}^{date_num} {time_secs}|${new Date().toLocaleString()}> :x:`
+    }
+  })
+
+  await client.chat.update({
+    channel: body.channel.id,
+    ts: body.message.ts,
+    blocks: val
+  })
+
 })
 
 app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
@@ -247,7 +264,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
     // Send to approval channel
     await client.chat.postMessage({
       text: 'New pizza grant request!',
-      channel: 'C05RZATA3QR',
+      channel: pizzaApprovalChannel,
       blocks: [
         {
           type: 'section',
@@ -257,7 +274,6 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
 
 Slack: <@${user}>
 Email: ${email}
-IP Address: ${await isUniqueIP(email).isUniqueIP ? 'Unique' : `Not unique (${await isUniqueIP(email).userIP})`}
 Club name/venue: ${club}
 Where they are getting pizza: ${pizzaShop}
 
@@ -280,26 +296,7 @@ That's it! Gotta go deliver these pizzas now.`
               },
               value: id,
               action_id: 'approve',
-              style: 'primary',
-              confirm: {
-                title: {
-                  type: 'plain_text',
-                  text: 'Are you sure?'
-                },
-                text: {
-                  type: 'mrkdwn',
-                  text: 'Are you sure you want to approve this grant?'
-                },
-                confirm: {
-                  type: 'plain_text',
-                  text: 'Yes! Do it!'
-                },
-
-                deny: {
-                  type: 'plain_text',
-                  text: "Stop, I've changed my mind!"
-                }
-              }
+              style: 'primary'
             },
             {
               type: 'button',
@@ -310,26 +307,7 @@ That's it! Gotta go deliver these pizzas now.`
               },
               value: id,
               action_id: 'deny',
-              style: 'danger',
-              confirm: {
-                title: {
-                  type: 'plain_text',
-                  text: 'Are you sure?'
-                },
-                text: {
-                  type: 'mrkdwn',
-                  text: 'Are you sure you want to deny this grant?'
-                },
-                confirm: {
-                  type: 'plain_text',
-                  text: 'Yes! Do it!'
-                },
-
-                deny: {
-                  type: 'plain_text',
-                  text: "Stop, I've changed my mind!"
-                }
-              }
+              style: 'danger'
             }
           ]
         }
