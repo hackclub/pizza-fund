@@ -52,6 +52,7 @@ const app = new App({
 })
 
 app.action('approve', async ({ body, action, client, ack, say }) => {
+  await approve(action.value)
 
   const sUser = await getSlackUser(action.value)
 
@@ -105,6 +106,7 @@ app.action('approve', async ({ body, action, client, ack, say }) => {
 })
 
 app.action('deny', async ({ body, action, client, ack, say }) => {
+  await deny(action.value)
 
   const sUser = await getSlackUser(action.value)
 
