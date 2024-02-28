@@ -439,6 +439,23 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
           },
           {
             type: 'input',
+            optional: false,
+            element: {
+              type: 'url_text_input',
+              action_id: 'proof',
+              placeholder: {
+                type: 'plain_text',
+                text: 'Post your club in #cdn and paste that link here!'
+              }
+            },
+            label: {
+              type: 'plain_text',
+              text: 'Share a photo of your club hacking',
+              emoji: true
+            }
+          },
+          {
+            type: 'input',
             optional: true,
             element: {
               type: 'url_text_input',
@@ -453,7 +470,8 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
               text: 'Extra credit: draw a pizza!',
               emoji: true
             }
-          }
+          },
+          
         ],
         type: 'modal'
       }
