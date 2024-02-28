@@ -281,6 +281,11 @@ Where they are getting pizza: ${pizzaShop}
 
 Country: ${country}
 Why they started a club: ${why}
+
+
+And their club: ${photograph}
+
+
 ${pizza ? 'And their lovely pizza: ' + pizza : ":/ They didn't make a pizza."}
 
 That's it! Gotta go deliver these pizzas now.`
