@@ -442,7 +442,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             optional: false,
             element: {
               type: 'url_text_input',
-              action_id: 'proof',
+              action_id: 'photograph',
               placeholder: {
                 type: 'plain_text',
                 text: 'Post your club in #cdn and paste that link here!'
