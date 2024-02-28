@@ -173,7 +173,7 @@ app.view('pizza_form', async ({ ack, body, view, client, logger }) => {
       let key = Object.keys(obj)[0]
       mapped[key] = obj[key].value
     }
-    let { email, club, country, why, pizza, pizzaShop } = mapped
+    let { email, club, country, why, pizza, pizzaShop, photograph } = mapped
 
     let userIsBlacklisted = await isBlacklisted(user, email, club)
     if (userIsBlacklisted.blacklisted == true) {
