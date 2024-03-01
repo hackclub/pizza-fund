@@ -456,7 +456,7 @@ app.command('/pizza', async ({ ack, body, client, logger, respond }) => {
             },
             label: {
               type: 'plain_text',
-              text: 'Share a photo of your club hacking',
+              text: 'Share a photo of you with your Hack Club',
               emoji: true
             }
           },
